@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>קסם המילים - לומדים לקרוא עברית</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#FF9800">
+    
+    <style>
+        /* Core Styling & Playful Theme Setup */
+        :root {
+            --primary-color: #FF9800;
+            --secondary-color: #4CAF50;
+            --accent-color: #E91E63;
+            --text-color: #37474F;
+            --card-bg: #FFFFFF;
+            --nav-bg: #FFFFFF;
+            --shadow: 0 8px 16px rgba(0,0,0,0.1);
+            --border-radius: 24px;
+            --current-bg: none; 
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: linear-gradient(135deg, #FFF9C4 0%, #E1F5FE 50%, #F3E5F5 100%);
+        }
+
+        /* עיצוב מסך הפתיחה (Splash Screen) - תמונה על כל המסך מקצה לקצה */
+        #splashScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #FFF9C4; /* רקע זמני עד שהתמונה נטענת */
+            z-index: 9999;
+            overflow: hidden;
+            transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* סגירת מסך הפתיחה בדילוג חלק */
+        #splashScreen.fade-out {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        /* מתיחת תמונת הפתיחה על כל המסך בצורה חכמה */
+        #splashScreen img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* מכסה את כל המסך בלי לעוות את התמונה */
+            object-position: center; /* ממקם את מרכז התמונה באמצע המסך */
+        }
+
+        /* שכבת הרקע הדינמית */
+        #bgWrapper {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: var(--current-bg);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.25; 
+            z-index: -1;
+            transition: background-image 0.3s ease-in-out;
+            pointer-events: none;
+        }
+
+        /* מערכת איורים צפים ברקע */
+        .bg-decorations {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.18;
+        }
+
+        .decor-item {
+            position: absolute;
+            animation: floatAround 6s ease-in-out infinite alternate;
+        }
+        .decor-item:nth-child(even) { animation-duration: 9s; }
+        .decor-item:nth-child(3n) { animation-duration: 7s; }
+
+        @keyframes floatAround {
+            from { transform: translateY(0) rotate(0deg); }
+            to { transform: translateY(-25px) rotate(15deg); }
+        }
+
+        /* Header Styling */
+        .app-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .reward-counter {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 6px 16px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        /* סרגל בחירת דמויות וקולות */
+        .character-selector-bar {
+            background: rgba(255, 255, 255, 0.85);
+            padding: 10px;
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            border-bottom: 2px solid #E0E0E0;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            scrollbar-width: none;
+            backdrop-filter: blur(5px);
+            touch-action: pan-x;
+        }
+        .character-selector-bar::-webkit-scrollbar { display: none; }
+
+        .char-pill {
+            background: white;
+            border: 2px solid #CFD8DC;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+        .char-pill.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3);
+        }
+
+        /* Screen Layouts & Containers */
+        .app-container {
+            flex: 1;
+            position: relative;
+            overflow-y: auto;
+            padding-bottom: 90px;
+            z-index: 2;
+        }
+
+        .app-screen {
+            display: none;
+            padding: 16px;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .app-screen.active {
+            display: block;
+        }
+
+        .screen-instruction {
+            text-align: center;
+            font-size: 1.2rem;
+            margin-bottom: 16px;
+            color: #546E7A;
+            text-shadow: 1px 1px 0px white;
+        }
+
+        /* Letters Grid Layout */
+        .letters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(clamp(60px, 16vw, 85px), 1fr));
+            gap: 12px;
+            padding: 8px;
+        }
+
+        /* UI Buttons & Interaction Elements */
+        .letter-card, .niqqud-card {
+            background: var(--card-bg);
+            border: 3px solid #CFD8DC;
+            border-radius: var(--border-radius);
+            aspect-ratio: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: clamp(1.8rem, 7vw, 2.6rem); 
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.2s;
+            position: relative;
+        }
+
+        .letter-card:active, .niqqud-card:active, .selected {
+            transform: scale(0.92);
+            border-color: var(--primary-color);
+            background-color: #FFF3E0;
+        }
+
+        .letter-card {
+            line-height: 1;
+            padding-bottom: 8px;
+        }
+
+        .niqqud-card.no-niqqud-style {
+            font-size: clamp(0.9rem, 3.5vw, 1.2rem);
+            color: #78909C;
+            border-style: dashed;
+        }
+
+        /* עיצוב ייחודי לכפתור דגש */
+        .niqqud-card.dagesh-style-card {
+            background-color: #E0F7FA;
+            border-color: #00ACC1;
+            color: #00838F;
+        }
+        .niqqud-card.dagesh-style-card.selected-dagesh {
+            background-color: #00ACC1;
+            color: white;
+            border-color: #00838F;
+            transform: scale(0.95);
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        /* Workspaces */
+        .builder-workspace, .word-workspace {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        /* ריבוע תצוגה מוגדל רספונסיבי */
+        .visualizer-card {
+            background: var(--card-bg);
+            width: clamp(120px, 35vw, 170px);
+            height: clamp(120px, 35vw, 170px);
+            border-radius: var(--border-radius);
+            border: 4px dashed var(--primary-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: clamp(3.5rem, 12vw, 5.5rem); 
+            position: relative;
+            box-shadow: var(--shadow);
+        }
+
+        /* Control Buttons styling */
+        .word-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .action-btn {
+            border: none;
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.1s;
+        }
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .speak-btn { background-color: var(--secondary-color); }
+        .mic-btn { background-color: var(--accent-color); }
+        .clear-btn { background-color: #78909C; }
+        .delete-btn { background-color: #FF5722; padding: 12px 16px; font-size: 1rem; } 
+        .add-to-word-btn { background-color: #2196F3; }
+        .next-btn { background-color: #00BCD4; }
+
+        /* סידור לחצנים באתגר דברו אלי */
+        .game-buttons-stack {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto;
+        }
+
+        .game-buttons-stack .large-game-mic {
+            width: 100%;
+            padding: 24px 32px;
+            font-size: 1.6rem;
+            border-radius: 30px;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(233, 30, 99, 0.4);
+        }
+
+        .game-buttons-stack .secondary-game-btn {
+            width: 85%;
+            padding: 12px 20px;
+            font-size: 1.1rem;
+            justify-content: center;
+        }
+
+        /* פופ-אפ אינדיקציית הקשבה חזותית */
+        .listening-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .listening-mic-icon {
+            font-size: 8rem;
+            margin-bottom: 20px;
+            animation: pulseMic 1s infinite alternate;
+        }
+
+        .listening-text {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .listening-subtext {
+            font-size: 1.2rem;
+            color: #B0BEC5;
+            padding: 0 20px;
+            text-align: center;
+        }
+
+        @keyframes pulseMic {
+            from { transform: scale(1); filter: drop-shadow(0 0 10px rgba(233, 30, 99, 0.5)); }
+            to { transform: scale(1.15); filter: drop-shadow(0 0 30px rgba(233, 30, 99, 0.9)); }
+        }
+
+        /* Dynamic Horizontal Selection Carousels */
+        .selector-container {
+            background: rgba(255, 255, 255, 0.75);
+            padding: 12px;
+            border-radius: var(--border-radius);
+            margin-top: 12px;
+            backdrop-filter: blur(5px);
+        }
+
+        .selector-container h3 {
+            font-size: 1rem;
+            margin: 8px 0;
+            color: #455A64;
+        }
+
+        .horizontal-scroll-selector {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 8px 4px;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+            touch-action: pan-x;
+        }
+
+        .horizontal-scroll-selector::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* כרטיסיות בתוך סליידר אופקי עם רוחב מותאם מסך */
+        .horizontal-scroll-selector .letter-card, 
+        .horizontal-scroll-selector .niqqud-card {
+            flex: 0 0 clamp(55px, 15vw, 70px);
+            height: clamp(55px, 15vw, 70px);
+            font-size: clamp(1.4rem, 5.5vw, 2rem);
+            scroll-snap-align: start;
+        }
+
+        /* Word Display Styling Configuration */
+        .word-display-area {
+            background: var(--card-bg);
+            max-height: 120px;
+            overflow-y: auto;
+            width: 100%;
+            border-radius: var(--border-radius);
+            border: 3px solid #CFD8DC;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 16px;
+            gap: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        .placeholder-text {
+            color: #90A4AE;
+            font-style: italic;
+        }
+
+        .syllable-block {
+            font-size: clamp(2.5rem, 9vw, 4rem); 
+            font-weight: bold;
+            position: relative;
+            padding: 0 4px;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-bottom: 4px solid transparent;
+        }
+
+        .syllable-split {
+            border-bottom: 4px dashed #B0BEC5;
+        }
+
+        .builder-inline-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 0 8px;
+        }
+
+        .mini-preview {
+            background: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            border: 2px solid var(--primary-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8rem;
+            position: relative;
+        }
+
+        /* עיצוב הגלריה והחנות */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 16px;
+            padding: 12px;
+            margin-bottom: 20px;
+        }
+
+        .gallery-item {
+            background: white;
+            border: 4px solid #CFD8DC;
+            border-radius: 16px;
+            aspect-ratio: 1;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+            box-shadow: var(--shadow);
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .gallery-item.no-bg-thumb {
+            background: linear-gradient(135deg, #FFF9C4, #E1F5FE);
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #546E7A;
+            text-align: center;
+            padding: 8px;
+        }
+
+        .gallery-item.selected {
+            border-color: var(--secondary-color);
+            transform: scale(1.03);
+            box-shadow: 0 0 12px rgba(76, 175, 80, 0.6);
+        }
+
+        .gallery-item.locked {
+            filter: brightness(0.4) grayscale(0.3);
+        }
+
+        .lock-badge {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-weight: bold;
+            font-size: 1rem;
+            text-shadow: 0px 2px 4px rgba(0,0,0,0.8);
+            pointer-events: none;
+            z-index: 5;
+        }
+        .lock-icon { font-size: 1.4rem; }
+
+        /* חלונית פופ-אפ כללית */
+        .shop-popup {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .shop-popup-content {
+            background: white;
+            padding: 24px;
+            border-radius: 20px;
+            width: 85%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+        }
+
+        .popup-preview-img-container {
+            width: 100%;
+            height: 160px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            border: 2px solid #E0E0E0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .popup-preview-img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .popup-preview-fallback {
+            background: linear-gradient(135deg, #FFF9C4, #E1F5FE);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: #546E7A;
+        }
+
+        .shop-popup-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #37474F;
+        }
+
+        .shop-popup-msg {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: #546E7A;
+        }
+
+        .shop-popup-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .shop-btn {
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+        }
+        .shop-btn-buy { background-color: var(--secondary-color); color: white; }
+        .shop-btn-cancel { background-color: #B0BEC5; color: white; }
+        .shop-btn-close { background-color: var(--primary-color); color: white; padding: 10px 30px; }
+
+        /* Sticky App Navigation Bar Footer */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background-color: var(--nav-bg);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.08);
+            border-top: 1px solid #E0E0E0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            background: none;
+            border: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #78909C;
+            cursor: pointer;
+            flex: 1;
+            height: 100%;
+            gap: 4px;
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .nav-icon { font-size: 1.4rem; }
+        .nav-label { font-size: 0.8rem; }
+
+        /* Feedback System Banner */
+        .speech-feedback {
+            padding: 8px 16px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: bold;
+            width: 100%;
+        }
+        .speech-feedback.success { background: #E8F5E9; color: #2E7D32; }
+        .speech-feedback.fail { background: #FFEBEE; color: #C62828; }
+
+        /* Reward Popups */
+        .overlay-reward {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .reward-content {
+            background: white;
+            padding: 32px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .big-star { font-size: 5rem; display: block; margin-bottom: 16px; }
+        .hidden { display: none !important; }
+
+        /* Keyframe Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .animate-bounce {
+            animation: bounce 0.6s infinite alternate;
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-15px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="splashScreen">
+        <img src="image0.jpeg" alt="מסך פתיחה" onerror="this.style.display='none'">
+    </div>
+
+    <div id="bgWrapper"></div>
+
+    <div class="bg-decorations">
+        <div class="decor-item" style="top: 5%; left: 5%; font-size: 5.5rem;">🎈</div>
+        <div class="decor-item" style="top: 15%; right: 8%; font-size: 6.5rem;">🚀</div>
+        <div class="decor-item" style="top: 42%; left: 6%; font-size: 5.8rem;">🎨</div>
+        <div class="decor-item" style="top: 68%; right: 5%; font-size: 5.2rem;">🧸</div>
+        <div class="decor-item" style="top: 85%; left: 10%; font-size: 6rem;">🌈</div>
+        <div class="decor-item" style="top: 25%; right: 28%; font-size: 4.5rem;">✨</div>
+        <div class="decor-item" style="top: 52%; right: 14%; font-size: 5.5rem;">🍦</div>
+        <div class="decor-item" style="top: 76%; left: 28%; font-size: 5rem;">🍭</div>
+        <div class="decor-item" style="top: 8%; left: 45%; font-size: 5.2rem;">☀️</div>
+        <div class="decor-item" style="top: 90%; right: 42%; font-size: 5.5rem;">🌸</div>
+        <div class="decor-item" style="top: 32%; left: 22%; font-size: 4.8rem;">🦁</div>
+        <div class="decor-item" style="top: 58%; left: 48%; font-size: 5.2rem;">🚗</div>
+    </div>
+
+    <header class="app-header">
+        <h1 class="app-title">קסם המילים ✨</h1>
+        <div class="reward-counter" id="rewardCounter">
+            <span class="star-icon">⭐</span>
+            <span id="starCount" class="star-count">0</span>
+        </div>
+    </header>
+
+    <div class="character-selector-bar" id="characterVoiceBar"></div>
+
+    <main class="app-container">
+        
+        <section id="screen-letters" class="app-screen active">
+            <h2 class="screen-instruction">לחצו על אות כדי לשמוע אותה!</h2>
+            <div class="letters-grid" id="lettersGrid"></div>
+        </section>
+
+        <section id="screen-builder" class="app-screen">
+            <h2 class="screen-instruction">הרכיבו הברה מצחיקה!</h2>
+            <div class="builder-workspace">
+                <div class="visualizer-card" id="builderVisualizer">
+                    <span id="combinedCanvas">א</span>
+                </div>
+                <button class="action-btn speak-btn" id="playSyllableBtn">🔊 השמע הברה</button>
+            </div>
+            
+            <div class="selector-container">
+                <h3>1. בחרו אות:</h3>
+                <div class="horizontal-scroll-selector" id="builderLettersSelector"></div>
+                
+                <h3>2. בחרו ניקוד ודגש:</h3>
+                <div class="horizontal-scroll-selector" id="builderNiqqudSelector"></div>
+            </div>
+        </section>
+
+        <section id="screen-words" class="app-screen">
+            <h2 class="screen-instruction">בנו מילה שלמה בעצמכם!</h2>
+            
+            <div class="word-workspace">
+                <div class="word-display-area" id="wordDisplayArea">
+                    <p class="placeholder-text">המילה שלכם תופיע כאן...</p>
+                </div>
+                
+                <div class="word-actions">
+                    <button class="action-btn speak-btn" id="playWordBtn">🔊 קרא מילה</button>
+                    <button class="action-btn delete-btn" id="deleteLastSyllableBtn">&lt;|</button>
+                    <button class="action-btn clear-btn" id="clearWordBtn">🗑️ נקה</button>
+                </div>
+            </div>
+
+            <div class="selector-container">
+                <h3>בחרו אות וניקוד ואז לחצו על "הוסף למילה"</h3>
+                <div class="builder-inline-row">
+                    <div class="mini-preview" id="wordMiniPreview"><span id="combinedWordMini">א</span></div>
+                    <button class="action-btn add-to-word-btn" id="addToWordBtn">➕ הוסף למילה</button>
+                </div>
+                <div class="horizontal-scroll-selector" id="wordLettersSelector"></div>
+                <div class="horizontal-scroll-selector" id="wordNiqqudSelector"></div>
+            </div>
+        </section>
+
+        <section id="screen-game" class="app-screen">
+            <h2 class="screen-instruction">קראו את המילה בקול רם ולחצו על המיקרופון!</h2>
+            
+            <div class="word-workspace">
+                <div class="word-display-area">
+                    <span id="gameWordDisplay" class="syllable-block">בַּיִת</span>
+                </div>
+                
+                <div class="game-buttons-stack">
+                    <button class="action-btn mic-btn large-game-mic" id="gameMicBtn">🎤 דברו אלי</button>
+                    <button class="action-btn speak-btn secondary-game-btn" id="gameHearBtn">🔊 שמע מילה</button>
+                    <button class="action-btn next-btn secondary-game-btn" id="gameNextBtn">🔀 מילה אחרת</button>
+                </div>
+                
+                <div id="gameSpeechFeedback" class="speech-feedback hidden"></div>
+            </div>
+        </section>
+
+        <section id="screen-gallery" class="app-screen">
+            <h2 class="screen-instruction">לחצו על תמונה כדי להחליף רקע! ⭐</h2>
+            <div class="gallery-grid" id="galleryGrid"></div>
+        </section>
+    </main>
+
+    <div id="listeningOverlay" class="listening-overlay hidden">
+        <div class="listening-mic-icon">🎤</div>
+        <div class="listening-text" id="listeningMainText">אני מקשיב לך...</div>
+        <div class="listening-subtext" id="listeningSubText">אמרו את המילה בקול רם!</div>
+    </div>
+
+    <div id="shopPopup" class="shop-popup hidden">
+        <div class="shop-popup-content" id="shopPopupContent"></div>
+    </div>
+
+    <nav class="bottom-nav">
+        <button class="nav-item active" data-target="screen-letters">
+            <span class="nav-icon">🅰️</span>
+            <span class="nav-label">האותיות</span>
+        </button>
+        <button class="nav-item" data-target="screen-builder">
+            <span class="nav-icon">🧩</span>
+            <span class="nav-label">בונה הברות</span>
+        </button>
+        <button class="nav-item" data-target="screen-words">
+            <span class="nav-icon">📚</span>
+            <span class="nav-label">בונה מילים</span>
+        </button>
+        <button class="nav-item" data-target="screen-game">
+            <span class="nav-icon">🎤</span>
+            <span class="nav-label">דברו אלי</span>
+        </button>
+        <button class="nav-item" data-target="screen-gallery">
+            <span class="nav-icon">🖼️</span>
+            <span class="nav-label">גלריה</span>
+        </button>
+    </nav>
+
+    <div class="overlay-reward hidden" id="rewardOverlay">
+        <div class="reward-content animate-bounce">
+            <span class="big-star">🌟</span>
+            <h2>כל הכבוד! מדהים!</h2>
+        </div>
+    </div>
+
+    <script>
+        const BACKGROUND_IMAGES = [
+            { file: 'image1.jpeg', cost: 5 },
+            { file: 'image2.jpeg', cost: 8 },
+            { file: 'image3.jpeg', cost: 10 },
+            { file: 'image4.jpeg', cost: 12 },
+            { file: 'image5.jpeg', cost: 12 },
+            { file: 'image6.jpeg', cost: 12 },
+            { file: 'image7.jpeg', cost: 12 },
+            { file: 'image8.jpeg', cost: 12 }
+        ];
+
+        const HEBREW_LETTERS = [
+            { char: 'א', id: 'alef', phonetic: 'אָלֶף', sound: 'אְ' },
+            { char: 'ב', id: 'bet', phonetic: 'בֵּית', sound: 'בְ' },
+            { char: 'ג', id: 'gimel', phonetic: 'גִּימֶל', sound: 'גְ' },
+            { char: 'ד', id: 'dalet', phonetic: 'דָּלֶת', sound: 'דְ' },
+            { char: 'ה', id: 'he', phonetic: 'הֵא', sound: 'הְ' },
+            { char: 'ו', id: 'vav', phonetic: 'וָו', sound: 'וְ' },
+            { char: 'ז', id: 'zayin', phonetic: 'זַיִן', sound: 'זְ' },
+            { char: 'ח', id: 'het', phonetic: 'חֵית', sound: 'חְ' },
+            { char: 'ט', id: 'tet', phonetic: 'טֵית', sound: 'טְ' },
+            { char: 'י', id: 'yod', phonetic: 'יוֹד', sound: 'יְ' },
+            { char: 'כ', id: 'kaf', phonetic: 'כַּף', sound: 'כְ' },
+            { char: 'ך', id: 'kaf_sofit', phonetic: 'כַּף סוֹפִית', sound: 'ךְ' },
+            { char: 'ל', id: 'lamed', phonetic: 'לָמֶד', sound: 'לְ' },
+            { char: 'מ', id: 'mem', phonetic: 'מֵם', sound: 'מְ' },
+            { char: 'ם', id: 'mem_sofit', phonetic: 'מֵם סוֹפִית', sound: 'םְ' },
+            { char: 'נ', id: 'nun', phonetic: 'נוּן', sound: 'נְ' },
+            { char: 'ן', id: 'nun_sofit', phonetic: 'נוּן סוֹפִית', sound: 'ןְ' },
+            { char: 'ס', id: 'samekh', phonetic: 'סָמֶך', sound: 'סְ' },
+            { char: 'ע', id: 'ayin', phonetic: 'עַיִן', sound: 'עְ' },
+            { char: 'פ', id: 'pe', phonetic: 'פֵּא', sound: 'פְ' },
+            { char: 'ף', id: 'pe_sofit', phonetic: 'פֵּא סוֹפִית', sound: 'ףְ' },
+            { char: 'צ', id: 'tsadi', phonetic: 'צַדִי', sound: 'צְ' },
+            { char: 'ץ', id: 'tsadi_sofit', phonetic: 'צַדִי סוֹפִית', sound: 'ץְ' },
+            { char: 'ק', id: 'qof', phonetic: 'קוֹף', sound: 'קְ' },
+            { char: 'ר', id: 'resh', phonetic: 'רֵיש', sound: 'רְ' },
+            { char: 'ש', id: 'shin', phonetic: 'שִׁין', sound: 'שְ' },
+            { char: 'ת', id: 'tav', phonetic: 'תָּו', sound: 'תְ' }
+        ];
+
+        const NIQQUD_MAP = [
+            { char: '', id: 'none', representation: 'ללא', sound: '' },
+            { char: '\u05B8', id: 'kamatz', representation: 'ָ', sound: 'a' },
+            { char: '\u05B7', id: 'patach', representation: 'ַ', sound: 'a' },
+            { char: '\u05B6', id: 'segol', representation: 'ֶ', sound: 'e' },
+            { char: '\u05B5', id: 'tzere', representation: 'ֵ', sound: 'e' },
+            { char: '\u05B4', id: 'hirik', representation: 'ִ', sound: 'i' },
+            { char: '\u05B4\u05D9', id: 'hirik_male', representation: 'ִ י', sound: 'i' }, 
+            { char: '\u05B9', id: 'holam', representation: 'ֹ', sound: 'o' },
+            { char: 'וֹ', id: 'holam_male', representation: 'וֹ', sound: 'o' }, 
+            { char: '\u05BB', id: 'kubutz', representation: 'ֻ', sound: 'u' },
+            { char: 'וּ', id: 'shuruk', representation: 'וּ', sound: 'u' }, 
+            { char: '\u05B0', id: 'sheva', representation: 'ְ', sound: 'e' }
+        ];
+
+        const RANDOM_WORDS_POOL = [
+            'אַבָּא', 'אִמָּא', 'אָח', 'אָחוֹת', 'סַבָּא', 'סָבְתָא', 'יֶלֶד', 'יַלְדָּה', 'חָבֵר', 'תִּינוֹק', 'דּוֹד', 'דּוֹדָה',
+            'כֶּלֶב', 'חָתוּל', 'סוּס', 'חֲמוֹר', 'אַרְנָב', 'פִּיל', 'קוֹף', 'אַרְיֵה', 'דֹּב', 'צִפּוֹר', 'דָּג', 'פַּרְפַּר', 'נָחָשׁ', 'עַכְבָּר', 'גָּמָל', 'פָּרָה', 'עֵז', 'כֶּבֶשׂ', 'תרְנְגוֹל', 'גּוּר', 'זאֵב', 'שׁוּעָל',
+            'לֶחֶם', 'מַיִם', 'חָלָב', 'בָּנָנָה', 'תַּפּוּחַ', 'תָּמָר', 'גְּלִידָה', 'עוּגָה', 'מֶלַח', 'גְּבִינָה', 'תַּוּת', 'שׁוֹקוֹ', 'גֶּזֶר', 'דְּבַשׁ', 'בָּשָׂר', 'בֵּיצָה', 'אֹרֶז', 'מָרָק', 'שֶׁמֶן', 'זַיִת',
+            'בַּיִת', 'דֶּלֶת', 'חַלּוֹן', 'כִּסֵּא', 'שֻׁלְחָן', 'מִטָּה', 'בֻּבָּה', 'סֵפֶר', 'בַּלּוֹן', 'שָׁעוֹן', 'כַּדּוּר', 'בֶּגֶד', 'מַפְתֵּחַ', 'תִּיק', 'סִיר', 'כּוֹס', 'צַלַּחת', 'מַזְלֵג', 'כַּפִּית', 'נֵר', 'סַבּוֹן', 'מִבְרֶשֶׁת',
+            'שֶׁמֶשׁ', 'יָרֵחַ', 'כּוֹכָב', 'עָנָן', 'גֶּשֶׁם', 'עֵץ', 'פֶּרַח', 'עָלֶה', 'הַר', 'יָם', 'חוֹל', 'נָהָר', 'אֵשׁ', 'אֲדָמָה', 'אֶבֶן', 'דֶּשֶׁא',
+            'סִירָה', 'אוטוֹ', 'רַכֶּבֶת', 'מָטוֹס', 'עֲגָלָה', 'אוֹפַנַּיִם',
+            'כָּחֹל', 'אָדֹם', 'יָרֹק', 'צָהֹב', 'לָבָן', 'שָׁחֹר',
+            'שָׁלוֹם', 'תּוֹדָה', 'בְּבַקָּשָׁה', 'הָלַךְ', 'בָּא', 'רָץ', 'קָפַץ', 'שָׁר', 'קָרָא', 'כָּתַב', 'אָכַל', 'שָׁתָה', 'יָשַׁן', 'שָׂמַח', 'צָחַק', 'שָׁמַע'
+        ];
+
+        const CHARACTER_VOICES = {
+            normal: { label: 'רגיל 👤', pitch: 1.0, rate: 1.0, soloRate: 2.1 },
+            jett: { label: 'ג׳ט ✈️', pitch: 1.3, rate: 0.8, soloRate: 1.9 },          
+            magnemite: { label: 'מגנמייט 🧲', pitch: 0.15, rate: 0.75, soloRate: 1.6 }, 
+            robot: { label: 'רובוט 🤖', pitch: 0.5, rate: 1.0, soloRate: 2.1 },
+            fairy: { label: 'פיה 🧚', pitch: 1.5, rate: 1.1, soloRate: 2.3 },
+            turtle: { label: 'צב עצלן 🐢', pitch: 1.0, rate: 0.5, soloRate: 1.3 },
+            superhero: { label: 'גיבור על 🚀', pitch: 1.1, rate: 1.5, soloRate: 2.4 }
+        };
+
+        let purchasedBackgrounds = JSON.parse(localStorage.getItem('hebrew_purchased_bg')) || [];
+
+        let appState = {
+            stars: parseInt(localStorage.getItem('hebrew_stars')) || 0,
+            activeScreen: 'screen-letters',
+            builder: { letter: HEBREW_LETTERS[0], niqqud: NIQQUD_MAP[0], dagesh: false },
+            wordBuilder: { letter: HEBREW_LETTERS[0], niqqud: NIQQUD_MAP[0], dagesh: false, currentWord: [] },
+            gameWord: '',
+            currentCharacter: 'normal',
+            selectedBg: localStorage.getItem('hebrew_app_bg') || 'none'
+        };
+
+        let currentRecognitionInstance = null;
+        let recognitionTimeoutId = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initSplashTimer(); // הפעלת טיימר מסך הפתיחה
+            initUI();
+            setupNavigation();
+            setupCharacterBar();
+            setupGalleryUI();
+            updateStarsUI();
+            generateNewGameWord();
+            applyBackground(appState.selectedBg); 
+        });
+
+        // פונקציית ניהול טיימר ומעבר חלק ממסך הפתיחה לאפליקציה
+        function initSplashTimer() {
+            setTimeout(() => {
+                const splash = document.getElementById('splashScreen');
+                if (splash) {
+                    splash.classList.add('fade-out');
+                    // הסרה מלאה מה-DOM לאחר סיום אנימציית הדעיכה (חצי שנייה)
+                    setTimeout(() => splash.remove(), 500);
+                    // מוודא שהאפליקציה מתחילה בטאב האותיות כנדרש
+                    switchScreen('screen-letters');
+                }
+            }, 3000); // 3 שניות המתנה
+        }
+
+        function updateStarsUI() {
+            document.getElementById('starCount').innerText = appState.stars;
+            localStorage.setItem('hebrew_stars', appState.stars);
+        }
+
+        function awardStar() {
+            appState.stars += 1;
+            updateStarsUI();
+            const overlay = document.getElementById('rewardOverlay');
+            overlay.classList.remove('hidden');
+            setTimeout(() => overlay.classList.add('hidden'), 2000);
+        }
+
+        function setupNavigation() {
+            document.querySelectorAll('.bottom-nav .nav-item').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const targetScreen = e.currentTarget.getAttribute('data-target');
+                    switchScreen(targetScreen);
+                });
+            });
+
+            initSwipeNavigation();
+        }
+
+        function switchScreen(targetScreenId) {
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.app-screen').forEach(scr => scr.classList.remove('active'));
+            
+            const activeNavBtn = document.querySelector(`.bottom-nav .nav-item[data-target="${targetScreenId}"]`);
+            if (activeNavBtn) activeNavBtn.classList.add('active');
+            
+            const targetScreen = document.getElementById(targetScreenId);
+            if (targetScreen) targetScreen.classList.add('active');
+            
+            appState.activeScreen = targetScreenId;
+            
+            if(targetScreenId === 'screen-gallery') {
+                setupGalleryUI();
+            }
+        }
+
+        function initSwipeNavigation() {
+            const screensOrder = [
+                'screen-letters',
+                'screen-builder',
+                'screen-words',
+                'screen-game',
+                'screen-gallery'
+            ];
+
+            let touchStartX = 0;
+            let touchStartY = 0;
+            const minSwipeDistance = 80; 
+
+            document.body.addEventListener('touchstart', (e) => {
+                const isInsideSelector = e.target.closest('.horizontal-scroll-selector') || e.target.closest('#characterVoiceBar');
+                if (isInsideSelector) {
+                    touchStartX = 0; 
+                    return;
+                }
+                touchStartX = e.changedTouches[0].screenX;
+                touchStartY = e.changedTouches[0].screenY;
+            }, { passive: true });
+
+            document.body.addEventListener('touchend', (e) => {
+                if (touchStartX === 0) return; 
+
+                const touchEndX = e.changedTouches[0].screenX;
+                const touchEndY = e.changedTouches[0].screenY;
+                
+                const distanceX = touchEndX - touchStartX;
+                const distanceY = touchEndY - touchStartY;
+
+                if (Math.abs(distanceY) > Math.abs(distanceX)) {
+                    return; 
+                }
+
+                if (Math.abs(distanceX) < minSwipeDistance) {
+                    return;
+                }
+
+                const currentIdx = screensOrder.indexOf(appState.activeScreen);
+                if (currentIdx === -1) return;
+
+                if (distanceX > 0) {
+                    if (currentIdx < screensOrder.length - 1) {
+                        switchScreen(screensOrder[currentIdx + 1]);
+                    }
+                } else {
+                    if (currentIdx > 0) {
+                        switchScreen(screensOrder[currentIdx - 1]);
+                    }
+                }
+            }, { passive: true });
+        }
+
+        function setupCharacterBar() {
+            const bar = document.getElementById('characterVoiceBar');
+            Object.keys(CHARACTER_VOICES).forEach((key) => {
+                const charData = CHARACTER_VOICES[key];
+                const pill = document.createElement('div');
+                pill.className = `char-pill ${key === appState.currentCharacter ? 'active' : ''}`;
+                pill.innerText = charData.label;
+                pill.setAttribute('data-char', key);
+                
+                pill.addEventListener('click', () => {
+                    bar.querySelectorAll('.char-pill').forEach(p => p.classList.remove('active'));
+                    pill.classList.add('active');
+                    appState.currentCharacter = key;
+                    playAudio("שלום");
+                });
+                bar.appendChild(pill);
+            });
+        }
+
+        function setupGalleryUI() {
+            const grid = document.getElementById('galleryGrid');
+            grid.innerHTML = '';
+
+            const noneItem = document.createElement('div');
+            noneItem.className = 'gallery-item no-bg-thumb';
+            if (appState.selectedBg === 'none') noneItem.classList.add('selected');
+            noneItem.innerText = 'ללא רקע ⚪';
+            noneItem.addEventListener('click', () => {
+                openPreviewPopup({ file: 'none', cost: 0 }, true);
+            });
+            grid.appendChild(noneItem);
+
+            BACKGROUND_IMAGES.forEach(img => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                
+                const isPurchased = purchasedBackgrounds.includes(img.file);
+
+                if (!isPurchased) {
+                    item.classList.add('locked');
+                    const lockBadge = document.createElement('div');
+                    lockBadge.className = 'lock-badge';
+                    lockBadge.innerHTML = `<span class="lock-icon">🔒</span><span>${img.cost} ⭐</span>`;
+                    item.appendChild(lockBadge);
+                } else if (appState.selectedBg === img.file) {
+                    item.classList.add('selected');
+                }
+
+                const imgEl = document.createElement('img');
+                imgEl.src = img.file;
+                imgEl.alt = 'רקע';
+                imgEl.onerror = () => {
+                    if (!isPurchased) item.querySelector('.lock-badge')?.remove();
+                    item.className = `gallery-item no-bg-thumb ${!isPurchased ? 'locked' : ''}`;
+                    item.innerText = `${img.file}\n(${img.cost} ⭐)`;
+                    if (!isPurchased) {
+                        const lockBadge = document.createElement('div');
+                        lockBadge.className = 'lock-badge';
+                        lockBadge.innerHTML = `<span class="lock-icon">🔒</span><span>${img.cost} ⭐</span>`;
+                        item.appendChild(lockBadge);
+                    }
+                };
+
+                item.appendChild(imgEl);
+
+                item.addEventListener('click', () => {
+                    if (isPurchased) {
+                        openPreviewPopup(img, false);
+                    } else {
+                        openShopPopup(img);
+                    }
+                });
+
+                grid.appendChild(item);
+            });
+        }
+
+        function selectAndApplyBgDirectly(bgValue) {
+            appState.selectedBg = bgValue;
+            localStorage.setItem('hebrew_app_bg', bgValue);
+            applyBackground(bgValue);
+            setupGalleryUI(); 
+            playAudio("רקע שונה");
+        }
+
+        function applyBackground(bgValue) {
+            if (bgValue === 'none') {
+                document.documentElement.style.setProperty('--current-bg', 'none');
+            } else {
+                document.documentElement.style.setProperty('--current-bg', `url('${bgValue}')`);
+            }
+        }
+
+        function openPreviewPopup(img, isNone = false) {
+            const popup = document.getElementById('shopPopup');
+            const content = document.getElementById('shopPopupContent');
+            
+            let imageMarkup = `<div class="popup-preview-img-container"><img src="${img.file}" alt="תצוגה מקדימה" onerror="this.outerHTML='<div class=popup-preview-fallback>${img.file}</div>'"></div>`;
+            if(isNone) {
+                imageMarkup = `<div class="popup-preview-img-container"><div class="popup-preview-fallback">ללא רקע ⚪</div></div>`;
+            }
+
+            content.innerHTML = `
+                ${imageMarkup}
+                <div class="shop-popup-title">תצוגה מקדימה</div>
+                <div class="shop-popup-msg">האם ברצונך להחליף לרקע זה?</div>
+                <div class="shop-popup-buttons">
+                    <button class="shop-btn shop-btn-buy" onclick="selectAndApplyBgDirectly('${img.file}'); closeShopPopup();">החלף רקע! 🖼️</button>
+                    <button class="shop-btn shop-btn-cancel" onclick="closeShopPopup()">ביטול</button>
+                </div>
+            `;
+            popup.classList.remove('hidden');
+        }
+
+        function openShopPopup(img) {
+            const popup = document.getElementById('shopPopup');
+            const content = document.getElementById('shopPopupContent');
+            const canAfford = appState.stars >= img.cost;
+
+            if (canAfford) {
+                content.innerHTML = `
+                    <div class="popup-preview-img-container"><img src="${img.file}" alt="חנות" onerror="this.outerHTML='<div class=popup-preview-fallback>${img.file}</div>'"></div>
+                    <div class="shop-popup-title">רוצה לקנות את הרקע הזה?</div>
+                    <div class="shop-popup-msg">המחיר הוא: <strong>${img.cost}</strong> כוכבים ⭐</div>
+                    <div class="shop-popup-buttons">
+                        <button class="shop-btn shop-btn-buy" onclick="processPurchase('${img.file}', ${img.cost})">קנה רקע! 🎉</button>
+                        <button class="shop-btn shop-btn-cancel" onclick="closeShopPopup()">ביטול</button>
+                    </div>
+                `;
+            } else {
+                content.innerHTML = `
+                    <div class="shop-popup-title" style="color: #C62828;">אין מספיק כוכבים</div>
+                    <div style="font-size: 3.5rem; margin: 10px 0; filter: grayscale(1) brightness(0.6);">⭐</div>
+                    <div class="shop-popup-msg">הרקע עולה <strong>${img.cost}</strong> כוכבים.<br>לך לטאב "דברו אלי" כדי להרוויח עוד!</div>
+                    <button class="shop-btn shop-btn-close" onclick="closeShopPopup()">סגור</button>
+                `;
+            }
+            popup.classList.remove('hidden');
+        }
+
+        function closeShopPopup() {
+            document.getElementById('shopPopup').classList.add('hidden');
+        }
+
+        function processPurchase(fileName, cost) {
+            if (appState.stars >= cost) {
+                appState.stars -= cost;
+                updateStarsUI();
+                
+                purchasedBackgrounds.push(fileName);
+                localStorage.setItem('hebrew_purchased_bg', JSON.stringify(purchasedBackgrounds));
+                
+                closeShopPopup();
+                selectAndApplyBgDirectly(fileName);
+            }
+        }
+
+        function initUI() {
+            const lettersGrid = document.getElementById('lettersGrid');
+            HEBREW_LETTERS.forEach(letter => {
+                const card = document.createElement('div');
+                card.className = 'letter-card';
+                card.innerText = letter.char;
+                card.addEventListener('click', () => playAudio(letter.phonetic)); 
+                lettersGrid.appendChild(card);
+            });
+
+            populateSelector('builderLettersSelector', HEBREW_LETTERS, 'letter', handleBuilderSelection);
+            populateNiqqudSelectorWithDagesh('builderNiqqudSelector', NIQQUD_MAP, 'builder');
+            
+            populateSelector('wordLettersSelector', HEBREW_LETTERS, 'letter', handleWordSelection);
+            populateNiqqudSelectorWithDagesh('wordNiqqudSelector', NIQQUD_MAP, 'wordBuilder');
+
+            document.getElementById('playSyllableBtn').addEventListener('click', () => {
+                let textToSpeak = "";
+                let isSoloLetter = false;
+                
+                const dageshChar = appState.builder.dagesh ? '\u05BC' : '';
+                
+                if (!appState.builder.niqqud || appState.builder.niqqud.id === 'none' || appState.builder.niqqud.id === 'sheva') {
+                    textToSpeak = appState.builder.letter.char + dageshChar + '\u05B0'; 
+                    isSoloLetter = !appState.builder.dagesh; 
+                } else {
+                    textToSpeak = appState.builder.letter.char + dageshChar + appState.builder.niqqud.char;
+                }
+                playAudio(textToSpeak, isSoloLetter);
+            });
+
+            document.getElementById('addToWordBtn').addEventListener('click', addSyllableToWordContainer);
+            document.getElementById('deleteLastSyllableBtn').addEventListener('click', deleteLastSyllableFromContainer); 
+            document.getElementById('clearWordBtn').addEventListener('click', clearWordContainerSpace);
+            document.getElementById('playWordBtn').addEventListener('click', readingWordOutloudEngineRoutine);
+            
+            document.getElementById('gameMicBtn').addEventListener('click', startGameSpeechRecognition);
+            
+            document.getElementById('gameHearBtn').addEventListener('click', () => {
+                playAudio(appState.gameWord);
+                setTimeout(() => {
+                    generateNewGameWord();
+                }, 800); 
+            });
+            
+            document.getElementById('gameNextBtn').addEventListener('click', generateNewGameWord);
+        }
+
+        function populateSelector(containerId, standardArray, targetProperty, interactionHandler) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = ''; 
+            standardArray.forEach((item, index) => {
+                const node = document.createElement('div');
+                node.className = targetProperty === 'letter' ? 'letter-card' : 'niqqud-card';
+                node.innerText = targetProperty === 'letter' ? item.char : item.representation;
+                
+                if(targetProperty === 'niqqud' && item.id === 'none') {
+                    node.classList.add('no-niqqud-style');
+                }
+                
+                if(index === 0) node.classList.add('selected');
+                
+                node.addEventListener('click', (e) => {
+                    container.querySelectorAll('.letter-card, .niqqud-card').forEach(c => c.classList.remove('selected'));
+                    node.classList.add('selected');
+                    interactionHandler(targetProperty, item);
+                });
+                container.appendChild(node);
+            });
+        }
+
+        function populateNiqqudSelectorWithDagesh(containerId, niqqudArray, stateScope) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            const dageshCard = document.createElement('div');
+            dageshCard.className = 'niqqud-card dagesh-style-card';
+            dageshCard.innerText = 'ּ דגש';
+            dageshCard.id = `${containerId}_dagesh`;
+            
+            dageshCard.addEventListener('click', () => {
+                appState[stateScope].dagesh = !appState[stateScope].dagesh;
+                if(appState[stateScope].dagesh) {
+                    dageshCard.classList.add('selected-dagesh');
+                } else {
+                    dageshCard.classList.remove('selected-dagesh');
+                }
+                
+                if(stateScope === 'builder') updateBuilderCanvasVisuals();
+                if(stateScope === 'wordBuilder') updateWordMiniVisuals();
+            });
+            container.appendChild(dageshCard);
+
+            niqqudArray.forEach((item, index) => {
+                const node = document.createElement('div');
+                node.className = 'niqqud-card';
+                node.innerText = item.representation;
+                
+                if(item.id === 'none') node.classList.add('no-niqqud-style');
+                if(index === 0) node.classList.add('selected');
+                
+                node.addEventListener('click', () => {
+                    container.querySelectorAll('.niqqud-card:not(.dagesh-style-card)').forEach(c => c.classList.remove('selected'));
+                    node.classList.add('selected');
+                    
+                    appState[stateScope].niqqud = item;
+                    
+                    if(stateScope === 'builder') updateBuilderCanvasVisuals(true);
+                    if(stateScope === 'wordBuilder') updateWordMiniVisuals();
+                });
+                container.appendChild(node);
+            });
+        }
+
+        function resetDageshButtonUI(containerId, stateScope) {
+            appState[stateScope].dagesh = false;
+            const dageshCard = document.getElementById(`${containerId}_dagesh`);
+            if(dageshCard) dageshCard.classList.remove('selected-dagesh');
+        }
+
+        function handleBuilderSelection(type, data) {
+            if(type === 'letter') {
+                appState.builder.letter = data;
+                resetDageshButtonUI('builderNiqqudSelector', 'builder');
+            }
+            updateBuilderCanvasVisuals(type === 'letter' || type === 'niqqud');
+        }
+
+        function updateBuilderCanvasVisuals(shouldTriggerVoice = false) {
+            const letterChar = appState.builder.letter.char;
+            const dageshChar = appState.builder.dagesh ? '\u05BC' : '';
+            const niqqudChar = appState.builder.niqqud ? appState.builder.niqqud.char : '';
+            
+            const cleanString = letterChar + dageshChar + niqqudChar;
+            document.getElementById('combinedCanvas').innerText = cleanString;
+            
+            if (shouldTriggerVoice) {
+                let textToSpeak = "";
+                let isSoloLetter = false;
+                if (!appState.builder.niqqud || appState.builder.niqqud.id === 'none' || appState.builder.niqqud.id === 'sheva') {
+                    textToSpeak = letterChar + dageshChar + '\u05B0';
+                    isSoloLetter = !appState.builder.dagesh;
+                } else {
+                    textToSpeak = cleanString;
+                }
+                playAudio(textToSpeak, isSoloLetter);
+            }
+        }
+
+        function handleWordSelection(type, data) {
+            if(type === 'letter') {
+                appState.wordBuilder.letter = data;
+                resetDageshButtonUI('wordNiqqudSelector', 'wordBuilder');
+            }
+            updateWordMiniVisuals();
+        }
+
+        function updateWordMiniVisuals() {
+            const letterChar = appState.wordBuilder.letter.char;
+            const dageshChar = appState.wordBuilder.dagesh ? '\u05BC' : '';
+            const niqqudChar = appState.wordBuilder.niqqud ? appState.wordBuilder.niqqud.char : '';
+            
+            const cleanString = letterChar + dageshChar + niqqudChar;
+            document.getElementById('combinedWordMini').innerText = cleanString;
+        }
+
+        function generateNewGameWord() {
+            let availableWords = RANDOM_WORDS_POOL.filter(w => w !== appState.gameWord);
+            const randomIndex = Math.floor(Math.random() * availableWords.length);
+            appState.gameWord = availableWords[randomIndex];
+            
+            document.getElementById('gameWordDisplay').innerText = appState.gameWord;
+            
+            const feedbackBanner = document.getElementById('gameSpeechFeedback');
+            feedbackBanner.classList.add('hidden');
+            feedbackBanner.innerText = '';
+        }
+
+        function normalizeHebrew(str) {
+            if (!str) return "";
+            let clean = str.replace(/[\u0591-\u05C7]/g, "");
+            clean = clean.replace(/יי/g, "י").replace(/וו/g, "ו");
+            clean = clean.replace(/[ויה]/g, ""); 
+            return clean.trim();
+        }
+
+        function startGameSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const feedbackBanner = document.getElementById('gameSpeechFeedback');
+            const overlay = document.getElementById('listeningOverlay');
+            const mainText = document.getElementById('listeningMainText');
+            const subText = document.getElementById('listeningSubText');
+
+            if (window.location.protocol === 'file:') {
+                mainText.innerText = "⚠️ תקלה באבטחה";
+                subText.innerHTML = "דפדפנים חוסמים את המיקרופון בהרצה מקומית.<br><br><strong>פתרון:</strong> יש להעלות את האתר לשרת (כמו GitHub Pages) או להריץ שרת מקומי (Localhost).";
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.add('hidden'), 6000);
+                return;
+            }
+
+            if (!SpeechRecognition) {
+                feedbackBanner.innerText = "❌ מכשיר זה אינו תומך בזיהוי דיבור בדפדפן הנוכחי.";
+                feedbackBanner.className = "speech-feedback fail";
+                feedbackBanner.classList.remove('hidden');
+                return;
+            }
+
+            if (currentRecognitionInstance) {
+                try { currentRecognitionInstance.abort(); } catch(e){}
+                clearTimeout(recognitionTimeoutId);
+            }
+
+            const recognition = new SpeechRecognition();
+            currentRecognitionInstance = recognition;
+            recognition.lang = 'he-IL';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            mainText.innerText = "אני מקשיב לך...";
+            subText.innerText = "אמרו את המילה בקול רם!";
+            
+            overlay.classList.remove('hidden');
+            feedbackBanner.innerText = "⏳ מקשיב... דברו עכשיו!";
+            feedbackBanner.className = "speech-feedback";
+            feedbackBanner.classList.remove('hidden');
+
+            try {
+                recognition.start();
+            } catch(e) {
+                overlay.classList.add('hidden');
+                feedbackBanner.innerText = "❌ שגיאה בהפעלת המיקרופון.";
+                feedbackBanner.className = "speech-feedback fail";
+                return;
+            }
+
+            recognitionTimeoutId = setTimeout(() => {
+                try { recognition.stop(); } catch(e) {}
+                overlay.classList.add('hidden');
+            }, 4000);
+
+            recognition.onresult = (event) => {
+                clearTimeout(recognitionTimeoutId);
+                overlay.classList.add('hidden');
+                
+                const spokenResultText = event.results[0][0].transcript.trim();
+                
+                const normalizedSpoken = normalizeHebrew(spokenResultText);
+                const normalizedTarget = normalizeHebrew(appState.gameWord);
+                
+                if (normalizedSpoken === normalizedTarget && normalizedTarget.length > 0) {
+                    feedbackBanner.innerText = `🎉 כל הכבוד! אמרתם נכון: ${appState.gameWord}`;
+                    feedbackBanner.className = "speech-feedback success";
+                    awardStar();
+                    setTimeout(generateNewGameWord, 2500);
+                } else {
+                    feedbackBanner.innerText = `שמעתי: "${spokenResultText}". נסו שוב בשביל כוכב! ⭐`;
+                    feedbackBanner.className = "speech-feedback fail";
+                }
+            };
+
+            recognition.onerror = (err) => {
+                clearTimeout(recognitionTimeoutId);
+                overlay.classList.add('hidden');
+                if (err.error === 'not-allowed') {
+                    feedbackBanner.innerText = "❌ גישת המיקרופון נחסמה. יש לאשר מיקרופון בהגדרות הדפדפן.";
+                } else {
+                    feedbackBanner.innerText = "❌ לא הצלחתי לשמוע. נסו שוב בלחיצה מחדש!";
+                }
+                feedbackBanner.className = "speech-feedback fail";
+            };
+
+            recognition.onend = () => {
+                overlay.classList.add('hidden');
+            };
+        }
+
+        function addSyllableToWordContainer() {
+            const container = document.getElementById('wordDisplayArea');
+            const placeholder = container.querySelector('.placeholder-text');
+            if(placeholder) placeholder.remove();
+
+            const currentLetter = appState.wordBuilder.letter;
+            const currentNiqqud = appState.wordBuilder.niqqud;
+            const hasDagesh = appState.wordBuilder.dagesh;
+            const dageshChar = hasDagesh ? '\u05BC' : '';
+
+            let combinedVisualChar = currentLetter.char + dageshChar + (currentNiqqud ? currentNiqqud.char : '');
+
+            let audioRepresentation = combinedVisualChar;
+            let isSoloLetter = false;
+            if (!currentNiqqud || currentNiqqud.id === 'none' || currentNiqqud.id === 'sheva') {
+                audioRepresentation = currentLetter.char + dageshChar + '\u05B0';
+                isSoloLetter = !hasDagesh;
+            }
+
+            const segment = {
+                char: combinedVisualChar,
+                audioText: audioRepresentation,
+                isSoloLetter: isSoloLetter
+            };
+
+            appState.wordBuilder.currentWord.push(segment);
+
+            const block = document.createElement('span');
+            block.className = 'syllable-block';
+            
+            if(currentNiqqud && currentNiqqud.id !== 'none') {
+                block.classList.add('syllable-split');
+            }
+            
+            block.innerText = segment.char;
+            container.appendChild(block);
+
+            resetDageshButtonUI('wordNiqqudSelector', 'wordBuilder');
+            updateWordMiniVisuals();
+        }
+
+        function deleteLastSyllableFromContainer() {
+            if (appState.wordBuilder.currentWord.length === 0) return;
+
+            appState.wordBuilder.currentWord.pop();
+
+            const container = document.getElementById('wordDisplayArea');
+            const blocks = container.querySelectorAll('.syllable-block');
+            
+            if (blocks.length > 0) {
+                blocks[blocks.length - 1].remove(); 
+            }
+
+            if (appState.wordBuilder.currentWord.length === 0) {
+                container.innerHTML = '<p class="placeholder-text">המילה שלכם תופיע כאן...</p>';
+            }
+        }
+
+        function clearWordContainerSpace() {
+            appState.wordBuilder.currentWord = [];
+            const container = document.getElementById('wordDisplayArea');
+            container.innerHTML = '<p class="placeholder-text">המילה שלכם תופיע כאן...</p>';
+            resetDageshButtonUI('wordNiqqudSelector', 'wordBuilder');
+            updateWordMiniVisuals();
+        }
+
+        function playAudio(hebrewText, isSoloLetter = false) {
+            if ('speechSynthesis' in window) {
+                window.webkitSynthesis?.cancel() || window.speechSynthesis.cancel();
+                
+                setTimeout(() => {
+                    const utterance = new SpeechSynthesisUtterance(hebrewText);
+                    utterance.lang = 'he-IL';
+                    
+                    const characterConfig = CHARACTER_VOICES[appState.currentCharacter];
+                    utterance.pitch = characterConfig.pitch;
+                    
+                    if (isSoloLetter) {
+                        utterance.rate = characterConfig.soloRate;
+                    } else {
+                        utterance.rate = characterConfig.rate;
+                    }
+                    
+                    const voices = window.speechSynthesis.getVoices();
+                    const hebrewVoice = voices.find(v => v.lang.startsWith('he'));
+                    if (hebrewVoice) utterance.voice = hebrewVoice;
+
+                    window.speechSynthesis.speak(utterance);
+                }, 50);
+            }
+        }
+
+        function readingWordOutloudEngineRoutine() {
+            if(appState.wordBuilder.currentWord.length === 0) return;
+            
+            const hasNiqqud = appState.wordBuilder.currentWord.some(s => s.char.length > 1);
+            
+            let fullyCombinedWordString = "";
+            if (!hasNiqqud) {
+                fullyCombinedWordString = appState.wordBuilder.currentWord.map(s => s.audioText).join('');
+            } else {
+                fullyCombinedWordString = appState.wordBuilder.currentWord.map(s => s.char).join('');
+            }
+            
+            playAudio(fullyCombinedWordString, false);
+        }
+    </script>
+</body>
+</html>
