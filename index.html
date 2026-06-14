@@ -73,11 +73,11 @@
             object-position: center;
         }
 
-        /* כפתור דילוג על מסך הפתיחה - מעודכן לצד ימין למעלה */
+        /* כפתור דילוג על מסך הפתיחה ממוקם בצד ימין למעלה */
         .skip-splash-btn {
             position: absolute;
             top: clamp(20px, 5vh, 40px);
-            right: 20px; /* שונה מ-left ל-right */
+            right: 20px;
             background: rgba(0, 0, 0, 0.6);
             color: white;
             border: 2px solid rgba(255, 255, 255, 0.4);
@@ -288,7 +288,7 @@
             margin-bottom: 24px;
         }
 
-        /* ריבוע תצוגה מוגדל רספונסיבי */
+        /* ריבוע תצוגה מוגדל رسפונسيبي */
         .visualizer-card {
             background: var(--card-bg);
             width: clamp(120px, 35vw, 170px);
@@ -987,40 +987,38 @@
             applyBackground(appState.selectedBg); 
         });
 
-        // ניהול מסך פתיחה חכם ומוגן מפני חסימות אבטחה (CORS)
+        // ניהול מסך פתיחה דינמי - עודכן ל-4 שניות (4000ms)
         function initSplashLogic() {
             const video = document.getElementById("splashVideo");
             const image = document.getElementById("splashImage");
             let videoPlaying = false;
 
-            // פונקציה שעוברת למצב תמונה אם הוידאו נכשל
+            // מעבר למצב תמונת גיבוי קבועה אם הוידאו חסום או נכשל
             const switchToImageFallback = () => {
-                if (videoPlaying) return; // אם הוא כבר מנגן, הכל טוב
+                if (videoPlaying) return; 
                 video.style.display = "none";
                 image.style.display = "block";
                 
-                // תמונת הגיבוי תוצג למשך 3 שניות מהרגע שהופעלה
+                // תמונת הגיבוי תוצג למשך 4 שניות מהרגע שהיא מופעלת
                 clearTimeout(splashTimerId);
-                splashTimerId = setTimeout(closeSplashScreenDirectly, 3000);
+                splashTimerId = setTimeout(closeSplashScreenDirectly, 4000);
             };
 
-            // מאזין לאירוע שהוידאו אכן התחיל לרוץ
             video.addEventListener('playing', () => {
                 videoPlaying = true;
             });
 
-            // מאזין לשגיאות קלאסיות (קובץ חסר)
             video.addEventListener("error", switchToImageFallback);
 
-            // הגנה אקטיבית: אם תוך 150 מילי-שניות הוידאו לא התחיל לנגן (למשל עקב חסימת אבטחה מקומית), נעבור מיד לתמונה
+            // הגנה אקטיבית: אם תוך 300 מילי-שניות הוידאו לא מנגן (עקב חסימת CORS מקומית), חותכים מיד לתמונה
             setTimeout(() => {
                 if (!videoPlaying) {
                     switchToImageFallback();
                 }
-            }, 1500); // 150ms מספיקים לדפדפן לקבוע אם הוא מצליח לגשת למדיה
+            }, 300);
 
-            // קוצב זמן קשיח מקסימלי לכל מסך הפתיחה
-            splashTimerId = setTimeout(closeSplashScreenDirectly, 3000);
+            // קוצב זמן קשיח מקסימלי לכל מסך הפתיחה - עודכן ל-4 שניות
+            splashTimerId = setTimeout(closeSplashScreenDirectly, 4000);
         }
 
         function closeSplashScreenDirectly() {
