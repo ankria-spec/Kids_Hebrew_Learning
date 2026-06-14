@@ -42,33 +42,56 @@
             background: linear-gradient(135deg, #FFF9C4 0%, #E1F5FE 50%, #F3E5F5 100%);
         }
 
-        /* עיצוב מסך הפתיחה (Splash Screen) - תמונה על כל המסך מקצה לקצה */
+        /* עיצוב מסך הפתיחה הדינמי (Splash Screen) */
         #splashScreen {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background-color: #FFF9C4; /* רקע זמני עד שהתמונה נטענת */
+            background-color: #FFF9C4;
             z-index: 9999;
             overflow: hidden;
             transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
             opacity: 1;
             visibility: visible;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        /* סגירת מסך הפתיחה בדילוג חלק */
         #splashScreen.fade-out {
             opacity: 0;
             visibility: hidden;
         }
 
-        /* מתיחת תמונת הפתיחה על כל המסך בצורה חכמה */
-        #splashScreen img {
+        /* מתיחת הוידאו והתמונה מקצה לקצה */
+        #splashScreen video, #splashScreen img {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* מכסה את כל המסך בלי לעוות את התמונה */
-            object-position: center; /* ממקם את מרכז התמונה באמצע המסך */
+            object-fit: cover;
+            object-position: center;
+        }
+
+        /* כפתור דילוג על מסך הפתיחה - מעודכן לצד ימין למעלה */
+        .skip-splash-btn {
+            position: absolute;
+            top: clamp(20px, 5vh, 40px);
+            right: 20px; /* שונה מ-left ל-right */
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10000;
+            backdrop-filter: blur(4px);
+            transition: background 0.2s;
+        }
+        .skip-splash-btn:active {
+            background: rgba(0, 0, 0, 0.8);
         }
 
         /* שכבת הרקע הדינמית */
@@ -407,7 +430,6 @@
             display: none;
         }
 
-        /* כרטיסיות בתוך סליידר אופקי עם רוחב מותאם מסך */
         .horizontal-scroll-selector .letter-card, 
         .horizontal-scroll-selector .niqqud-card {
             flex: 0 0 clamp(55px, 15vw, 70px);
@@ -709,7 +731,13 @@
 <body>
 
     <div id="splashScreen">
-        <img src="image0.jpeg" alt="מסך פתיחה" onerror="this.style.display='none'">
+        <button class="skip-splash-btn" onclick="closeSplashScreenDirectly()">דילוג ➔</button>
+        
+        <video id="splashVideo" autoplay muted playsinline>
+            <source src="video0.mp4" type="video/mp4">
+        </video>
+        
+        <img id="splashImage" src="image0.jpeg" alt="מסך פתיחה" style="display: none;">
     </div>
 
     <div id="bgWrapper"></div>
@@ -919,7 +947,7 @@
             'שֶׁמֶשׁ', 'יָרֵחַ', 'כּוֹכָב', 'עָנָן', 'גֶּשֶׁם', 'עֵץ', 'פֶּרַח', 'עָלֶה', 'הַר', 'יָם', 'חוֹל', 'נָהָר', 'אֵשׁ', 'אֲדָמָה', 'אֶבֶן', 'דֶּשֶׁא',
             'סִירָה', 'אוטוֹ', 'רַכֶּבֶת', 'מָטוֹס', 'עֲגָלָה', 'אוֹפַנַּיִם',
             'כָּחֹל', 'אָדֹם', 'יָרֹק', 'צָהֹב', 'לָבָן', 'שָׁחֹר',
-            'שָׁלוֹם', 'תּוֹדָה', 'בְּבַקָּשָׁה', 'הָלַךְ', 'בָּא', 'רָץ', 'קָפַץ', 'שָׁר', 'קָרָא', 'כָּתַב', 'אָכַל', 'שָׁתָה', 'יָשַׁן', 'שָׂמַח', 'צָחַק', 'שָׁמַע'
+            'שָׁלוֹם', 'תּוֹדָה', 'בְּבַקָּשָׁה', 'הָלַךְ', 'בָּא', 'רָץ', 'קָפַץ', 'שָׁר', 'קָרָא', 'כָּתַב', 'אָכַל', 'שָׁתָה', 'יָשַׁן', 'שָׁמַח', 'צָחַק', 'שָׁמַע'
         ];
 
         const CHARACTER_VOICES = {
@@ -946,9 +974,10 @@
 
         let currentRecognitionInstance = null;
         let recognitionTimeoutId = null;
+        let splashTimerId = null;
 
         document.addEventListener('DOMContentLoaded', () => {
-            initSplashTimer(); // הפעלת טיימר מסך הפתיחה
+            initSplashLogic(); 
             initUI();
             setupNavigation();
             setupCharacterBar();
@@ -958,18 +987,50 @@
             applyBackground(appState.selectedBg); 
         });
 
-        // פונקציית ניהול טיימר ומעבר חלק ממסך הפתיחה לאפליקציה
-        function initSplashTimer() {
+        // ניהול מסך פתיחה חכם ומוגן מפני חסימות אבטחה (CORS)
+        function initSplashLogic() {
+            const video = document.getElementById("splashVideo");
+            const image = document.getElementById("splashImage");
+            let videoPlaying = false;
+
+            // פונקציה שעוברת למצב תמונה אם הוידאו נכשל
+            const switchToImageFallback = () => {
+                if (videoPlaying) return; // אם הוא כבר מנגן, הכל טוב
+                video.style.display = "none";
+                image.style.display = "block";
+                
+                // תמונת הגיבוי תוצג למשך 3 שניות מהרגע שהופעלה
+                clearTimeout(splashTimerId);
+                splashTimerId = setTimeout(closeSplashScreenDirectly, 3000);
+            };
+
+            // מאזין לאירוע שהוידאו אכן התחיל לרוץ
+            video.addEventListener('playing', () => {
+                videoPlaying = true;
+            });
+
+            // מאזין לשגיאות קלאסיות (קובץ חסר)
+            video.addEventListener("error", switchToImageFallback);
+
+            // הגנה אקטיבית: אם תוך 150 מילי-שניות הוידאו לא התחיל לנגן (למשל עקב חסימת אבטחה מקומית), נעבור מיד לתמונה
             setTimeout(() => {
-                const splash = document.getElementById('splashScreen');
-                if (splash) {
-                    splash.classList.add('fade-out');
-                    // הסרה מלאה מה-DOM לאחר סיום אנימציית הדעיכה (חצי שנייה)
-                    setTimeout(() => splash.remove(), 500);
-                    // מוודא שהאפליקציה מתחילה בטאב האותיות כנדרש
-                    switchScreen('screen-letters');
+                if (!videoPlaying) {
+                    switchToImageFallback();
                 }
-            }, 3000); // 3 שניות המתנה
+            }, 1500); // 150ms מספיקים לדפדפן לקבוע אם הוא מצליח לגשת למדיה
+
+            // קוצב זמן קשיח מקסימלי לכל מסך הפתיחה
+            splashTimerId = setTimeout(closeSplashScreenDirectly, 3000);
+        }
+
+        function closeSplashScreenDirectly() {
+            clearTimeout(splashTimerId);
+            const splash = document.getElementById('splashScreen');
+            if (splash) {
+                splash.classList.add('fade-out');
+                setTimeout(() => splash.remove(), 500);
+                switchScreen('screen-letters');
+            }
         }
 
         function updateStarsUI() {
@@ -1412,7 +1473,7 @@
         }
 
         function startGameSpeechRecognition() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSynthesisRecognition || window.webkitSpeechRecognition;
             const feedbackBanner = document.getElementById('gameSpeechFeedback');
             const overlay = document.getElementById('listeningOverlay');
             const mainText = document.getElementById('listeningMainText');
