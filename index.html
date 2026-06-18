@@ -288,7 +288,7 @@
             margin-bottom: 24px;
         }
 
-        /* ריבוע תצוגה מוגדל رسפונسيبي */
+        /* ריבוע תצוגה מוגדל رسפונסיבי */
         .visualizer-card {
             background: var(--card-bg);
             width: clamp(120px, 35vw, 170px);
@@ -494,10 +494,10 @@
             position: relative;
         }
 
-        /* עיצוב הגלריה והחנות */
+        /* עיצוב הגלריה - תצוגה אנכית לגובה */
         .gallery-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
             gap: 16px;
             padding: 12px;
             margin-bottom: 20px;
@@ -507,7 +507,7 @@
             background: white;
             border: 4px solid #CFD8DC;
             border-radius: 16px;
-            aspect-ratio: 1;
+            aspect-ratio: 3 / 4; /* יחס גובה-רוחב אנכי לכרטיסיות */
             overflow: hidden;
             cursor: pointer;
             position: relative;
@@ -518,9 +518,15 @@
             align-items: center;
         }
 
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
         .gallery-item.no-bg-thumb {
             background: linear-gradient(135deg, #FFF9C4, #E1F5FE);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: bold;
             color: #546E7A;
             text-align: center;
@@ -569,23 +575,26 @@
         .shop-popup-content {
             background: white;
             padding: 24px;
-            border-radius: 20px;
-            width: 85%;
-            max-width: 320px;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 360px; /* הוגדל מעט כדי לתת מקום לתמונה הגדולה */
             text-align: center;
             box-shadow: 0 10px 25px rgba(0,0,0,0.25);
         }
 
+        /* עיצוב מכולת התמונה בפופ-אפ - הוגדל לשליש מסך אנכי לפחות */
         .popup-preview-img-container {
-            width: 100%;
-            height: 160px;
-            border-radius: 12px;
+            width: auto;
+            height: 35vh; /* תופס לפחות שליש מגובה המסך דינמית */
+            aspect-ratio: 3 / 4; /* שומר על צורת כרטיסייה אנכית מושלמת */
+            border-radius: 20px;
             overflow: hidden;
-            margin-bottom: 16px;
-            border: 2px solid #E0E0E0;
+            margin: 0 auto 16px auto;
+            border: 4px solid #CFD8DC;
             display: flex;
             justify-content: center;
             align-items: center;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.15);
         }
 
         .popup-preview-img-container img {
@@ -603,18 +612,21 @@
             align-items: center;
             font-weight: bold;
             color: #546E7A;
+            padding: 16px;
+            text-align: center;
+            font-size: 1.2rem;
         }
 
         .shop-popup-title {
             font-size: 1.3rem;
             font-weight: bold;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             color: #37474F;
         }
 
         .shop-popup-msg {
             font-size: 1.1rem;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             color: #546E7A;
         }
 
@@ -625,16 +637,17 @@
         }
 
         .shop-btn {
-            padding: 10px 20px;
-            font-size: 1rem;
+            padding: 12px 24px;
+            font-size: 1.05rem;
             font-weight: bold;
             border-radius: 50px;
             border: none;
             cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .shop-btn-buy { background-color: var(--secondary-color); color: white; }
         .shop-btn-cancel { background-color: #B0BEC5; color: white; }
-        .shop-btn-close { background-color: var(--primary-color); color: white; padding: 10px 30px; }
+        .shop-btn-close { background-color: var(--primary-color); color: white; padding: 12px 36px; }
 
         /* Sticky App Navigation Bar Footer */
         .bottom-nav {
@@ -731,7 +744,7 @@
 <body>
 
     <div id="splashScreen">
-        <button class="skip-splash-btn" onclick="closeSplashScreenDirectly()">דילוג ➔</button>
+        <button class="skip-splash-btn" onclick="closeSplashScreenDirectly()">דלוג &#10142;</button>
         
         <video id="splashVideo" autoplay muted playsinline>
             <source src="video0.mp4" type="video/mp4">
@@ -918,7 +931,7 @@
             { char: 'ף', id: 'pe_sofit', phonetic: 'פֵּא סוֹפִית', sound: 'ףְ' },
             { char: 'צ', id: 'tsadi', phonetic: 'צַדִי', sound: 'צְ' },
             { char: 'ץ', id: 'tsadi_sofit', phonetic: 'צַדִי סוֹפִית', sound: 'ץְ' },
-            { char: 'ק', id: 'qof', phonetic: 'קוֹף', sound: 'קְ' },
+            { char: 'ק', id: 'qof', phonetic: 'קוֹף', sound: 'קוֹף' },
             { char: 'ר', id: 'resh', phonetic: 'רֵיש', sound: 'רְ' },
             { char: 'ש', id: 'shin', phonetic: 'שִׁין', sound: 'שְ' },
             { char: 'ת', id: 'tav', phonetic: 'תָּו', sound: 'תְ' }
@@ -947,7 +960,7 @@
             'שֶׁמֶשׁ', 'יָרֵחַ', 'כּוֹכָב', 'עָנָן', 'גֶּשֶׁם', 'עֵץ', 'פֶּרַח', 'עָלֶה', 'הַר', 'יָם', 'חוֹל', 'נָהָר', 'אֵשׁ', 'אֲדָמָה', 'אֶבֶן', 'דֶּשֶׁא',
             'סִירָה', 'אוטוֹ', 'רַכֶּבֶת', 'מָטוֹס', 'עֲגָלָה', 'אוֹפַנַּיִם',
             'כָּחֹל', 'אָדֹם', 'יָרֹק', 'צָהֹב', 'לָבָן', 'שָׁחֹר',
-            'שָׁלוֹם', 'תּוֹדָה', 'בְּבַקָּשָׁה', 'הָלַךְ', 'בָּא', 'רָץ', 'קָפַץ', 'שָׁר', 'קָרָא', 'כָּתַב', 'אָכַל', 'שָׁתָה', 'יָשַׁן', 'שָׁמַח', 'צָחַק', 'שָׁמַע'
+            'שָׁלוֹם', 'תּוֹדָה', 'בְּבַקָּשָׁה', 'הָלַךְ', 'בָּא', 'רָץ', 'קָפַץ', 'שָׁר', 'קָרָא', 'כָּתַב', 'אָכַל', 'שָׁתָה', 'יָשัׁן', 'שָׁמַח', 'צָחַק', 'שָׁמַע'
         ];
 
         const CHARACTER_VOICES = {
@@ -987,19 +1000,16 @@
             applyBackground(appState.selectedBg); 
         });
 
-        // ניהול מסך פתיחה דינמי - עודכן ל-4 שניות (4000ms)
         function initSplashLogic() {
             const video = document.getElementById("splashVideo");
             const image = document.getElementById("splashImage");
             let videoPlaying = false;
 
-            // מעבר למצב תמונת גיבוי קבועה אם הוידאו חסום או נכשל
             const switchToImageFallback = () => {
                 if (videoPlaying) return; 
                 video.style.display = "none";
                 image.style.display = "block";
                 
-                // תמונת הגיבוי תוצג למשך 4 שניות מהרגע שהיא מופעלת
                 clearTimeout(splashTimerId);
                 splashTimerId = setTimeout(closeSplashScreenDirectly, 4000);
             };
@@ -1010,14 +1020,12 @@
 
             video.addEventListener("error", switchToImageFallback);
 
-            // הגנה אקטיבית: אם תוך 300 מילי-שניות הוידאו לא מנגן (עקב חסימת CORS מקומית), חותכים מיד לתמונה
             setTimeout(() => {
                 if (!videoPlaying) {
                     switchToImageFallback();
                 }
             }, 300);
 
-            // קוצב זמן קשיח מקסימלי לכל מסך הפתיחה - עודכן ל-4 שניות
             splashTimerId = setTimeout(closeSplashScreenDirectly, 4000);
         }
 
